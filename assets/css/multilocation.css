@@ -1,0 +1,13 @@
+p.remove_location {
+    float: right;
+    display: inline-block;
+    margin-top: -19px;
+    cursor: pointer;
+}
+
+#multi-location-listing-contact-map {
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    height: 235px;
+}
