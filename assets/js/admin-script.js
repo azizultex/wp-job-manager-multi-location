@@ -1,18 +1,6 @@
 jQuery(function($){
 	var i = 0;
 	// load existing locations
-	// var sjfklshd = [
-	// 	{
-	// 	  "name": "Pabna, Bangladesh",
-	// 	  "geo_lat": "24.0128563",
-	// 	  "geo_lng": "89.25905720000003"
-	// 	},
-	// 	{
-	// 	  "name": "Mall Drive West, Jersey City, NJ, USA",
-	// 	  "geo_lat": "40.7278045",
-	// 	  "geo_lng": "-74.03864290000001"
-	// 	}
-	//   ]; 
 	$.each(additionallocations, function(k, v){
 		if(v) {
 			// let clone = $('.fieldset-job_location').clone();

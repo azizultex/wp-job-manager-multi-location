@@ -49,47 +49,50 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 			echo $before_widget;
 			?>
 
-<div class="map-widget-sections">
+		<div class="map-widget-sections">
 
-			<?php if ( $map && $map_behavior_api_key ) : ?>
-	<div class="map-widget-section <?php echo esc_attr( $split ); ?>">
-		<div id="multi-location-listing-contact-map"></div>
-	</div>
-	<?php endif; ?>
+					<?php if ( $map && $map_behavior_api_key ) : ?>
+			<div class="map-widget-section <?php echo esc_attr( $split ); ?>">
+				<div id="multi-location-listing-contact-map"></div>
+			</div>
+			<div class="map-widget-section">
+				<?php echo json_encode(get_post_meta(get_the_ID(), '_additionallocations', true)); ?>
+			</div>
+			<?php endif; ?>
 
-			<?php if ( $phone || $web || $address || $directions ) : ?>
-	<div class="map-widget-section <?php echo esc_attr( $split ); ?>">
+					<?php if ( $phone || $web || $address || $directions ) : ?>
+			<div class="map-widget-section <?php echo esc_attr( $split ); ?>">
 
-				<?php
-				do_action( 'listify_widget_job_listing_map_before' );
+						<?php
+						do_action( 'listify_widget_job_listing_map_before' );
 
-				if ( $address ) :
-					listify_the_listing_location();
-			endif;
+						if ( $address ) :
+							listify_the_listing_location();
+					endif;
 
-				if ( $phone ) :
-					listify_the_listing_telephone();
-			endif;
+						if ( $phone ) :
+							listify_the_listing_telephone();
+					endif;
 
-				if ( $email ) :
-					listify_the_listing_email();
-			endif;
+						if ( $email ) :
+							listify_the_listing_email();
+					endif;
 
-				if ( $web ) :
-					listify_the_listing_url();
-			endif;
+						if ( $web ) :
+							listify_the_listing_url();
+					endif;
 
-				if ( $directions ) :
-					listify_the_listing_directions_form();
-			endif;
+						if ( $directions ) :
+							listify_the_listing_directions_form();
+					endif;
 
-				do_action( 'listify_widget_job_listing_map_after' );
-				?>
+						do_action( 'listify_widget_job_listing_map_after' );
+						?>
 
-	</div>
-	<?php endif; ?>
+			</div>
+			<?php endif; ?>
 
-</div>
+		</div>
 
 			<?php
 			echo $after_widget;

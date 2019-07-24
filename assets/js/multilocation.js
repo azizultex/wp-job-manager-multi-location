@@ -3,9 +3,10 @@
 		 * Constructor.
 		 */
 		function MultiLocationMap() {
-
+			console.log('mapSettings', mapSettings)
 			// Get vars needed.
-            this.options = listifySingleMap;
+			this.options = mapSettings;
+			this.additionallocations = additionallocations;
 			this.canvas  = 'multi-location-listing-contact-map'; // #listing-contact-map .
 
 			if ( ! document.getElementById( this.canvas ) ) {

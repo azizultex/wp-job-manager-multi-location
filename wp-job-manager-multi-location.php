@@ -60,6 +60,9 @@ class Keendevs_Multi_Location_WP_JOB_M {
             /* Register Scripts */
             add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts' ));
             add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ));
+            /* frontend job edit, submit page */
+            add_action( 'submit_job_form_end', array( $this, 'front_end_job_edit_submit' ) );
+
             /* load text domain */
             add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 
@@ -88,43 +91,65 @@ class Keendevs_Multi_Location_WP_JOB_M {
         printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) ); 
     }
 
-    public function register_scripts(){
+    public function localize_scripts_data(){
+        // localize script data
         global $post;
-        $listing = listify_get_listing( get_the_ID() );
-		$map_vars = apply_filters(
-			'listify_single_map_settings',
-			array(
-				'provider'   => 'googlemaps' === get_theme_mod( 'map-service-provider', 'googlemaps' ) ? 'googlemaps' : 'mapbox',
-				'lat'        => $listing->get_lat(),
-				'lng'        => $listing->get_lng(),
-				'term'       => $listing->get_marker_term()->term_id,
-				'icon'       => $listing->get_marker_term_icon(),
-				'mapOptions' => array(
-					'zoom'          => apply_filters( 'listify_single_listing_map_zoom', 15 ),
-					'styles'        => get_theme_mod( 'map-appearance-scheme', 'blue-water' ),
-					'mapboxTileUrl' => get_theme_mod( 'mapbox-tile-url', '' ),
-					'maxZoom'       => get_theme_mod( 'map-behavior-max-zoom', 17 ),
-				),
-			)
-		);
+        $listing = listify_get_listing( $post->ID );
+        $mapSettings = apply_filters(
+            'listify_single_map_settings',
+            array(
+                'provider'   => 'googlemaps' === get_theme_mod( 'map-service-provider', 'googlemaps' ) ? 'googlemaps' : 'mapbox',
+                'lat'        => $listing->get_lat(),
+                'lng'        => $listing->get_lng(),
+                'term'       => $listing->get_marker_term()->term_id,
+                'icon'       => $listing->get_marker_term_icon(),
+                'mapOptions' => array(
+                    'zoom'          => apply_filters( 'listify_single_listing_map_zoom', 15 ),
+                    'styles'        => get_theme_mod( 'map-appearance-scheme', 'blue-water' ),
+                    'mapboxTileUrl' => get_theme_mod( 'mapbox-tile-url', '' ),
+                    'maxZoom'       => get_theme_mod( 'map-behavior-max-zoom', 17 ),
+                ),
+            )
+        );
+        $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
+        $listingEditPage = get_post_meta($_GET['job_id'], '_additionallocations', true);
+        $options = array(
+            'lat'         => esc_attr( get_option( 'wpjmel_start_geo_lat', 40.712784 ) ),
+            'lng'         => esc_attr( get_option( 'wpjmel_start_geo_long', -74.005941 ) )
+        );
+        $this->local = array(
+            'listing' => $listing,
+            'mapSettings' => $mapSettings,
+            'additionallocations' => $additionallocations,
+            'listingEditPage'   => $listingEditPage,
+            'options'   => $options,
+        );
+    }
 
+    public function register_scripts(){
+        $this->localize_scripts_data();
         wp_enqueue_style( 'multi-location-css', $this->plugin_url . 'assets/css/multilocation.css');
-        wp_enqueue_script( 'multi-location-js', $this->plugin_url . 'assets/js/multilocation.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
-        wp_localize_script( 'multi-location-js', 'listifySingleMap', $map_vars );
-        wp_enqueue_script( 'multi-location-admin-js', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
-        // localize listing locations for admin
-		$additionallocations = get_post_meta($post->ID, '_additionallocations', true);
-		wp_localize_script( 'multi-location-admin-js', 'additionallocations', $additionallocations );
-		$options = array(
-				'lat'         => esc_attr( get_option( 'wpjmel_start_geo_lat', 40.712784 ) ),
-				'lng'         => esc_attr( get_option( 'wpjmel_start_geo_long', -74.005941 ) )
-			);
-		wp_localize_script( 'multi-location-admin-js', 'latlng', $options );
+        if(is_singular('job_listing')){
+            wp_enqueue_script( 'multi-location-js', $this->plugin_url . 'assets/js/multilocation.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
+            wp_localize_script( 'multi-location-js', 'mapSettings', $this->local['mapSettings'] );
+            wp_localize_script( 'multi-location-js', 'additionallocations', $this->local['additionallocations'] );
+        }
+        if(is_admin()){
+            wp_enqueue_script( 'multi-location-admin-js', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
+            wp_localize_script( 'multi-location-admin-js', 'additionallocations', $this->local['additionallocations'] );
+            wp_localize_script( 'multi-location-admin-js', 'latlng', $this->local['options'] );
+        }
+    }
+
+    public function front_end_job_edit_submit(){
+        wp_enqueue_script( 'frontend-new-listing-js', $this->plugin_url . 'assets/js/frontend-new-listing.js', array( 'jquery', 'mapify' ), $this->version, true );
+        wp_localize_script( 'frontend-new-listing-js', 'additionallocations', $this->local['listingEditPage'] );
+		wp_localize_script( 'frontend-new-listing-js', 'latlng', $this->local['options'] );
     }
 
     function save_post_location($post_id, $values) {
         $post_type = get_post_type( $post_id );
-        
+        update_option('locationPostData', $_POST[ 'additionallocation' ]);
         /* Job Listing Location */
         if( 'job_listing' == $post_type && isset ( $_POST[ 'additionallocation' ] ) ){
             update_post_meta( $post_id, '_additionallocations', $_POST[ 'additionallocation' ]);
@@ -146,7 +171,6 @@ class Keendevs_Multi_Location_WP_JOB_M {
         // load_textdomain( 'wp-job-manager-locations', WP_LANG_DIR . "/wp-job-manager-locations/wp-job-manager-locations-$locale.mo" );
         load_plugin_textdomain( $this->domain, false, dirname( $this->basename ) . '/languages/' );
     }
-
 }
 
 
