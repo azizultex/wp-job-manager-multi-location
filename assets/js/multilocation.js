@@ -8,14 +8,14 @@
 			this.options = mapSettings;
 			this.additionallocations = additionallocations;
 			this.canvas  = 'multi-location-listing-contact-map';
-			this.FitMyMapBounds = [];
+			this.allLatLng = [[mapSettings.lat, mapSettings.lng]]; // collect the default map lat lng to include with additionallocations
 
 			if ( ! document.getElementById( this.canvas ) ) {
 				return;
 			}
 			
 			this.additionallocations.forEach(function(location){
-				this.FitMyMapBounds.push([location.geo_lat, location.geo_lng]);
+				this.allLatLng.push([location.geo_lat, location.geo_lng]);
 			}, this);
 
 
@@ -31,10 +31,11 @@
 		 * Google Maps Setup.
 		 */
 		MultiLocationMap.prototype.setupGoogleMaps = function() {
-			var self = this;
 
 			// Var:
 			this.latlng = new google.maps.LatLng( this.options.lat, this.options.lng );
+			// create map bounds object
+			this.bounds = new google.maps.LatLngBounds();
 
 			// Set Map:
 			this.map = new google.maps.Map( document.getElementById( this.canvas ), {
@@ -57,14 +58,30 @@
 				}
 			] } );
 
-			// Set Marker (using RichMarker Library):
-			this.marker = new RichMarker( {
-				position: this.latlng,
-				flat: true,
-				draggable: false,
-				content: '<div class="map-marker marker-color-' + this.options.term + ' type-' + this.options.term + '"><i class="' + this.options.icon + '"></i></div>'
-			} );
-			this.marker.setMap( this.map );
+			this.allLatLng.forEach(function(l){
+				var position = new google.maps.LatLng(l[0], l[1]);
+				this.bounds.extend( position );
+
+				// var marker = new google.maps.Marker({
+				// 	animation: google.maps.Animation.DROP,
+				// 	map: this.map,
+				// 	position: position,
+				// });
+				
+				// Set Marker (using RichMarker Library):
+				this.marker = new RichMarker({
+					position: position,
+					flat: true,
+					draggable: false,
+					content: '<div class="map-marker marker-color-' + this.options.term + ' type-' + this.options.term + '"><i class="' + this.options.icon + '"></i></div>'
+				});
+
+				this.marker.setMap( this.map );
+
+			}, this);
+
+			this.map.fitBounds( this.bounds );
+
 		};
 
 		/**
@@ -99,11 +116,11 @@
 
 			// Add marker to map:
 			// console.log(this.additionallocations)
-			this.additionallocations.forEach(location => {
-				this.marker = L.marker( [ location.geo_lat, location.geo_lng ], { icon: this.markerIcon } ).addTo( this.map );
+			this.allLatLng.forEach(location => {
+				this.marker = L.marker(location, { icon: this.markerIcon } ).addTo( this.map );
 			});
 
-			this.map.fitBounds(this.FitMyMapBounds);
+			this.map.fitBounds(this.allLatLng);
 
 		};
 

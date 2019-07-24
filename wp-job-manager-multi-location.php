@@ -46,6 +46,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $this->lang_dir     = trailingslashit( $this->plugin_dir . 'languages' );
         $this->domain       = 'multi-location';
         $this->setup_actions();
+
     }
 
     /**
