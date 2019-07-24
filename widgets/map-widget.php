@@ -56,7 +56,13 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 				<div id="multi-location-listing-contact-map"></div>
 			</div>
 			<div class="map-widget-section">
-				<?php echo json_encode(get_post_meta(get_the_ID(), '_additionallocations', true)); ?>
+				<h4><?php esc_html_e('Locations', 'multi-location'); ?></h4>
+				<?php 
+				$locations = get_post_meta(get_the_ID(), '_additionallocations', true);
+				foreach($locations as $l){
+					printf('<p>%s</p>', $l['name']);
+				} 
+				?>
 			</div>
 			<?php endif; ?>
 

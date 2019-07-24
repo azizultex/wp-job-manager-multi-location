@@ -114,8 +114,8 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
         $listingEditPage = get_post_meta($_GET['job_id'], '_additionallocations', true);
         $options = array(
-            'lat'         => esc_attr( get_option( 'wpjmel_start_geo_lat', 40.712784 ) ),
-            'lng'         => esc_attr( get_option( 'wpjmel_start_geo_long', -74.005941 ) )
+            'lat'         => $listing->get_lat(),
+            'lng'         => $listing->get_lng()
         );
         $this->local = array(
             'listing' => $listing,
@@ -149,7 +149,6 @@ class Keendevs_Multi_Location_WP_JOB_M {
 
     function save_post_location($post_id, $values) {
         $post_type = get_post_type( $post_id );
-        update_option('locationPostData', $_POST[ 'additionallocation' ]);
         /* Job Listing Location */
         if( 'job_listing' == $post_type && isset ( $_POST[ 'additionallocation' ] ) ){
             update_post_meta( $post_id, '_additionallocations', $_POST[ 'additionallocation' ]);

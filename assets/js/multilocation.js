@@ -3,15 +3,21 @@
 		 * Constructor.
 		 */
 		function MultiLocationMap() {
-			console.log('mapSettings', mapSettings)
+
 			// Get vars needed.
 			this.options = mapSettings;
 			this.additionallocations = additionallocations;
-			this.canvas  = 'multi-location-listing-contact-map'; // #listing-contact-map .
+			this.canvas  = 'multi-location-listing-contact-map';
+			this.FitMyMapBounds = [];
 
 			if ( ! document.getElementById( this.canvas ) ) {
 				return;
 			}
+			
+			this.additionallocations.forEach(function(location){
+				this.FitMyMapBounds.push([location.geo_lat, location.geo_lng]);
+			}, this);
+
 
 			// Setup map based on selected map provider.
 			if ( 'googlemaps' === this.options.provider ) {
@@ -92,7 +98,13 @@
 			} );
 
 			// Add marker to map:
-			this.marker = L.marker( [ this.options.lat, this.options.lng ], { icon: this.markerIcon } ).addTo( this.map );
+			// console.log(this.additionallocations)
+			this.additionallocations.forEach(location => {
+				this.marker = L.marker( [ location.geo_lat, location.geo_lng ], { icon: this.markerIcon } ).addTo( this.map );
+			});
+
+			this.map.fitBounds(this.FitMyMapBounds);
+
 		};
 
 	// // Define Map.
