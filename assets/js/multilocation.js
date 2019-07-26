@@ -1,4 +1,5 @@
-( function() {
+(function( window, undefined ){
+
 		/**
 		 * Constructor.
 		 */
@@ -15,7 +16,7 @@
 			}
 			
 			this.additionallocations.forEach(function(location){
-				this.allLatLng.push([location.geo_lat, location.geo_lng]);
+				this.allLatLng.push([location.lat, location.lng]);
 			}, this);
 
 
@@ -130,6 +131,6 @@
 	};
 
 	// Load Map.
-    MultiLocationMapInit();
-
-}).call(this);
+	MultiLocationMapInit();
+	
+})(window);

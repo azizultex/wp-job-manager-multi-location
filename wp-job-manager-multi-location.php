@@ -28,7 +28,6 @@ class Keendevs_Multi_Location_WP_JOB_M {
         if ( ! isset ( self::$instance ) ) {
             self::$instance = new self;
         }
-
         return self::$instance;
     }
 
@@ -46,7 +45,6 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $this->lang_dir     = trailingslashit( $this->plugin_dir . 'languages' );
         $this->domain       = 'multi-location';
         $this->setup_actions();
-
     }
 
     /**
@@ -59,8 +57,8 @@ class Keendevs_Multi_Location_WP_JOB_M {
    private function setup_actions() {
        if( class_exists( 'WP_Job_Manager_Extended_Location' ) ){
             /* Register Scripts */
-            add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts' ));
-            add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ));
+            add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts' ), 99);
+            add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ), 99);
             /* frontend job edit, submit page */
             add_action( 'submit_job_form_end', array( $this, 'front_end_job_edit_submit' ) );
 
@@ -79,6 +77,9 @@ class Keendevs_Multi_Location_WP_JOB_M {
 
             // multi-location widgets
             add_action( 'widgets_init', array( $this, 'widgets_init' ), 20);
+
+            // explore page facets locations ids 
+            add_filter( 'facetwp_filtered_post_ids', array($this, 'localize_explore_page_results_ids'), 10, 2);
        } 
        else 
        {
@@ -112,6 +113,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
                 ),
             )
         );
+
         $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
         $listingEditPage = get_post_meta($_GET['job_id'], '_additionallocations', true);
         $options = array(
@@ -127,6 +129,23 @@ class Keendevs_Multi_Location_WP_JOB_M {
         );
     }
 
+    public function localize_explore_page_results_ids( $post_ids, $class ) {
+        $per_page = get_option( 'job_manager_per_page' );
+        $locations = array_slice($post_ids, 0, $per_page);
+        $extraMarkers = [];
+        foreach($locations as $id){
+            $latLng = get_post_meta($id, '_additionallocations', true);
+            foreach($latLng as $lt){
+                $extraMarkers[] = array(
+                    'id' => $id,
+                    'location' => $lt,
+                );
+            }
+        }
+        wp_localize_script('multi-location-explore', 'expPgAddiLoc', $extraMarkers);
+        return $post_ids;
+    }
+
     public function register_scripts(){
         $this->localize_scripts_data();
         wp_enqueue_style( 'multi-location-css', $this->plugin_url . 'assets/css/multilocation.css');
@@ -134,6 +153,9 @@ class Keendevs_Multi_Location_WP_JOB_M {
             wp_enqueue_script( 'multi-location-js', $this->plugin_url . 'assets/js/multilocation.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
             wp_localize_script( 'multi-location-js', 'mapSettings', $this->local['mapSettings'] );
             wp_localize_script( 'multi-location-js', 'additionallocations', $this->local['additionallocations'] );
+        }
+        if(listify_results_has_map()){
+            wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util', 'listify-results'), $this->version, true );
         }
         if(is_admin()){
             wp_enqueue_script( 'multi-location-admin-js', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
@@ -187,4 +209,7 @@ function wp_job_manager_multi_location() {
     return Keendevs_Multi_Location_WP_JOB_M::instance();
 }
 
-wp_job_manager_multi_location();
+// load only when listify theme is active
+// if(function_exists('listify_php_compat_notice')){
+    wp_job_manager_multi_location();
+// }
