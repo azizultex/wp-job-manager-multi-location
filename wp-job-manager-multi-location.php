@@ -133,11 +133,13 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $extraMarkers = [];
         foreach($locations as $id){
             $latLng = get_post_meta($id, '_additionallocations', true);
-            foreach($latLng as $lt){
-                $extraMarkers[] = array(
-                    'id' => $id,
-                    'location' => $lt,
-                );
+            if(is_array($latLng)){
+                foreach($latLng as $lt){
+                    $extraMarkers[] = array(
+                        'id' => $id,
+                        'location' => $lt,
+                    );
+                }
             }
         }
         wp_localize_script('multi-location-explore', 'expPgAddiLoc', $extraMarkers);
