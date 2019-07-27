@@ -14,14 +14,14 @@ window.wp = window.wp || {};
         var mainListings = api.controllers.dataService.response.listings,
             per_page     = FWP_JSON.preload_data.settings.pager.per_page,
             newMarkers = [];
-        // console.log('mainListing', mainListings);
-        // console.log('expPgAddiLoc', expPgAddiLoc);
+        console.log('mainListing', mainListings);
+        console.log('expPgAddiLoc', expPgAddiLoc);
         mainListings.forEach(function(ml){
             expPgAddiLoc.forEach(exl => {
                 if( ( exl["id"] === ml["id"] ) && exl["location"]){
                     ml["location"]["lat"] = exl["location"]["lat"];
                     ml["location"]["lng"] = exl["location"]["lng"];
-                    ml["location"]["address"] = exl["location"]["name"];
+                    ml["location"]["address"] = exl["location"]["address"];
                    newMarkers.push(ml);
                 }
             });
@@ -47,7 +47,7 @@ window.wp = window.wp || {};
     //             if( ( exl["id"] === ml["id"] ) && exl["location"]){
     //                 ml["location"]["lat"] = exl["location"]["lat"];
     //                 ml["location"]["lng"] = exl["location"]["lng"];
-    //                 ml["location"]["address"] = exl["location"]["name"];
+    //                 ml["location"]["address"] = exl["location"]["address"];
     //             newMarkers.push(ml);
     //             }
     //         });

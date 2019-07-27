@@ -4,7 +4,7 @@ jQuery(function($){
 	$.each(additionallocations, function(k, v){
 		if(v) {
 			// let clone = $('.fieldset-job_location').clone();
-			$('#wpjmel_location .inside').append('<div><input type="text" style="width:100%" value="'+additionallocations[k]['name']+'" name="additionallocation['+i+'][name]" id="job_location'+ i +'"><p class="remove_location">Remove Location</p></div>');
+			$('#wpjmel_location .inside').append('<div><input type="text" style="width:100%" value="'+additionallocations[k]['address']+'" name="additionallocation['+i+'][address]" id="job_location'+ i +'"><p class="remove_location">Remove Location</p></div>');
 			// console.log(clone);
 			wpjmel_mb.input = '#job_location' + i;
 			wpjmel_mb.lat_input = 'additionallocation['+i+'][lat]';
@@ -18,9 +18,7 @@ jQuery(function($){
 
 	$('#wpjmel_location').append('<p class="button button-primary button-medium addLocation"> Add another location</p>');
 	$('body').on('click', '.addLocation', function(){
-		// let clone = $('.fieldset-job_location').clone();
-		$('#wpjmel_location .inside').append('<div><input type="text" class="input-text" name="additionallocation['+i+'][name]" id="job_location'+ i +'"><p class="remove_location">Remove Location</p></div>');
-		// console.log(clone);
+		$('#wpjmel_location .inside').append('<div><input type="text" class="input-text" name="additionallocation['+i+'][address]" id="job_location'+ i +'"><p class="remove_location">Remove Location</p></div>');
 		wpjmel_mb.input = '#job_location' + i;
 		wpjmel_mb.lat_input = 'additionallocation['+i+'][lat]';
 		wpjmel_mb.lng_input = 'additionallocation['+i+'][lng]';

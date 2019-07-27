@@ -3,7 +3,38 @@
 class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_Map {
     function __construct(){
         parent::__construct();
-    }
+	}
+	
+	private function get_map_url($coordinates) {
+		$base = 'http://maps.google.com/maps';
+		$args = array(
+			'daddr' => urlencode( $coordinates ),
+		);
+		return esc_url( add_query_arg( $args, $base ) );
+	}
+
+	private function multiLocation_get_direction($lat, $long){
+		$attr = array(
+			'href'   => esc_url( $this->get_map_url($lat . ',' . $long) ),
+			'rel'    => 'nofollow',
+			'target' => '_blank',
+			'class'  => 'js-toggle-directions',
+			'id'     => 'get-directions',
+		);
+	
+		$attr_str = '';
+	
+		foreach ( $attr as $name => $value ) {
+			$attr_str .= false !== $value ? sprintf( ' %s="%s"', esc_html( $name ), esc_attr( $value ) ) : esc_html( " {$name}" );
+		}
+		?>
+		<div class="job_listing-directions">
+			<a <?php echo $attr_str; // WPCS: XSS ok. ?>><?php esc_html_e( 'Get Directions', 'listify' ); ?></a>
+		</div>
+		<?php
+		// printf('<div class="job_listing-directions"><a%s>%s</a></div>', $attr_str, esc_html_e( 'Get Directions', 'listify' ));
+	}
+
     function widget( $args, $instance ) {
 		global $job_preview;
 
@@ -51,22 +82,30 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 
 		<div class="map-widget-sections">
 
-					<?php if ( $map && $map_behavior_api_key ) : ?>
+			<?php if ( $map && $map_behavior_api_key ) : ?>
 			<div class="map-widget-section <?php echo esc_attr( $split ); ?>">
 				<div id="multi-location-listing-contact-map"></div>
 			</div>
 			<div class="map-widget-section">
 				<h4><?php esc_html_e('Locations', 'multi-location'); ?></h4>
 				<?php 
+				printf('<p class="multi-location">%s</p>', get_post_meta(get_the_ID(), 'geolocation_formatted_address', true));
+				if ( $directions ) :
+					listify_the_listing_directions_form();
+				endif;
+
 				$locations = get_post_meta(get_the_ID(), '_additionallocations', true);
 				foreach($locations as $l){
-					printf('<p>%s</p>', $l['name']);
+					$addr = WP_Job_Manager_Geocode::get_location_data($l['address']);
+					// var_dump($addr);
+					printf('<p class="multi-location">%s</p>', $addr['formatted_address']);
+					$this->multiLocation_get_direction($addr['lat'],$addr['long']);
 				} 
 				?>
 			</div>
 			<?php endif; ?>
 
-					<?php if ( $phone || $web || $address || $directions ) : ?>
+			<?php if ( $phone || $web || $address || $directions ) : ?>
 			<div class="map-widget-section <?php echo esc_attr( $split ); ?>">
 
 						<?php
@@ -86,10 +125,6 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 
 						if ( $web ) :
 							listify_the_listing_url();
-					endif;
-
-						if ( $directions ) :
-							listify_the_listing_directions_form();
 					endif;
 
 						do_action( 'listify_widget_job_listing_map_after' );

@@ -1,13 +1,23 @@
-p.remove_location {
+.addLocation {
+    cursor: pointer;
+}
+.remove_location {
     float: right;
-    display: inline-block;
     margin-top: -19px;
     cursor: pointer;
 }
-
 #multi-location-listing-contact-map {
     width: 100%;
     max-width: 100%;
     position: relative;
     height: 235px;
+}
+.multi-location, 
+.map-widget-section {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.map-widget-section .job_listing-directions {
+    margin-top: 0;
+    margin-bottom: 1em;
 }

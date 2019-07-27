@@ -55,42 +55,40 @@ class Keendevs_Multi_Location_WP_JOB_M {
     * @return void
     */
    private function setup_actions() {
-       if( class_exists( 'WP_Job_Manager_Extended_Location' ) ){
-            /* Register Scripts */
-            add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts' ), 99);
-            add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ), 99);
-            /* frontend job edit, submit page */
-            add_action( 'submit_job_form_end', array( $this, 'front_end_job_edit_submit' ) );
+        if( !class_exists( 'WP_Job_Manager_Extended_Location' ) ){
+            add_action( 'admin_notices', array( $this, 'wp_job_manager_extended_location_missing' ));
+            return;
+        }
+        /* Register Scripts */
+        add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts' ), 99);
+        add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ), 99);
+        /* frontend job edit, submit page */
+        add_action( 'submit_job_form_end', array( $this, 'front_end_job_edit_submit' ) );
 
-            /* load text domain */
-            add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
+        /* load text domain */
+        add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 
-            /* Save Geo for New Post */
-            add_action( 'job_manager_save_job_listing', array($this, 'save_post_location'), 31, 2 );
-            add_action( 'resume_manager_save_resume', array($this, 'save_post_location'), 31, 2 );
-            add_action( 'wpjm_events_save_event', array($this, 'save_post_location'), 30, 2 );
+        /* Save Geo for New Post */
+        add_action( 'job_manager_save_job_listing', array($this, 'save_post_location'), 31, 2 );
+        add_action( 'resume_manager_save_resume', array($this, 'save_post_location'), 31, 2 );
+        add_action( 'wpjm_events_save_event', array($this, 'save_post_location'), 30, 2 );
 
-            /* Save Geo on Update Post */
-            add_action( 'job_manager_update_job_data', array($this, 'save_post_location'), 26, 2 );
-            add_action( 'resume_manager_update_resume_data', array($this, 'save_post_location'), 25, 2 );
-            add_action( 'wpjm_events_update_event_data', array($this, 'save_post_location'), 26, 2 );
+        /* Save Geo on Update Post */
+        add_action( 'job_manager_update_job_data', array($this, 'save_post_location'), 26, 2 );
+        add_action( 'resume_manager_update_resume_data', array($this, 'save_post_location'), 25, 2 );
+        add_action( 'wpjm_events_update_event_data', array($this, 'save_post_location'), 26, 2 );
 
-            // multi-location widgets
-            add_action( 'widgets_init', array( $this, 'widgets_init' ), 20);
+        // multi-location widgets
+        add_action( 'widgets_init', array( $this, 'widgets_init' ), 20);
 
-            // explore page facets locations ids 
-            add_filter( 'facetwp_filtered_post_ids', array($this, 'localize_explore_page_results_ids'), 10, 2);
-       } 
-       else 
-       {
-        add_action( 'admin_notices', array( $this, 'wp_job_manager_extended_location_missing' ));
-       }
+        // explore page facets locations ids 
+        add_filter( 'facetwp_filtered_post_ids', array($this, 'localize_explore_page_results_ids'), 10, 2);
     }
 
     public function wp_job_manager_extended_location_missing(){
         $class = 'notice notice-error';
-        $message = __( 'WP Job Manager Extended Location plugin is required to activate this plugin.', $this->domain );
-        printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) ); 
+        $message = __( 'Extended Location for WP Job Manager is required to activate this plugin plugin.', $this->domain );
+        printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html__( $message ) ); 
     }
 
     public function localize_scripts_data(){
@@ -150,28 +148,29 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $this->localize_scripts_data();
         wp_enqueue_style( 'multi-location-css', $this->plugin_url . 'assets/css/multilocation.css');
         if(is_singular('job_listing')){
-            wp_enqueue_script( 'multi-location-js', $this->plugin_url . 'assets/js/multilocation.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
-            wp_localize_script( 'multi-location-js', 'mapSettings', $this->local['mapSettings'] );
-            wp_localize_script( 'multi-location-js', 'additionallocations', $this->local['additionallocations'] );
+            wp_enqueue_script( 'single-listing', $this->plugin_url . 'assets/js/single-listing.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
+            wp_localize_script( 'single-listing', 'mapSettings', $this->local['mapSettings'] );
+            wp_localize_script( 'single-listing', 'additionallocations', $this->local['additionallocations'] );
         }
         if(listify_results_has_map()){
             wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util', 'listify-results'), $this->version, true );
         }
         if(is_admin()){
-            wp_enqueue_script( 'multi-location-admin-js', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
-            wp_localize_script( 'multi-location-admin-js', 'additionallocations', $this->local['additionallocations'] );
-            wp_localize_script( 'multi-location-admin-js', 'latlng', $this->local['options'] );
+            wp_enqueue_script( 'admin-script', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
+            wp_localize_script( 'admin-script', 'additionallocations', $this->local['additionallocations'] );
+            wp_localize_script( 'admin-script', 'latlng', $this->local['options'] );
         }
     }
 
     public function front_end_job_edit_submit(){
-        wp_enqueue_script( 'frontend-new-listing-js', $this->plugin_url . 'assets/js/frontend-new-listing.js', array( 'jquery', 'mapify' ), $this->version, true );
-        wp_localize_script( 'frontend-new-listing-js', 'additionallocations', $this->local['listingEditPage'] );
-		wp_localize_script( 'frontend-new-listing-js', 'latlng', $this->local['options'] );
+        wp_enqueue_script( 'frontend-script', $this->plugin_url . 'assets/js/frontend-script.js', array( 'jquery', 'mapify' ), $this->version, true );
+        wp_localize_script( 'frontend-script', 'additionallocations', $this->local['listingEditPage'] );
+		wp_localize_script( 'frontend-script', 'latlng', $this->local['options'] );
     }
 
     function save_post_location($post_id, $values) {
         $post_type = get_post_type( $post_id );
+        // WP_Job_Manager_Geocode::get_location_data();
         /* Job Listing Location */
         if( 'job_listing' == $post_type && isset ( $_POST[ 'additionallocation' ] ) ){
             update_post_meta( $post_id, '_additionallocations', $_POST[ 'additionallocation' ]);
@@ -208,8 +207,4 @@ class Keendevs_Multi_Location_WP_JOB_M {
 function wp_job_manager_multi_location() {
     return Keendevs_Multi_Location_WP_JOB_M::instance();
 }
-
-// load only when listify theme is active
-// if(function_exists('listify_php_compat_notice')){
-    wp_job_manager_multi_location();
-// }
+add_action( 'plugins_loaded', 'wp_job_manager_multi_location' );
