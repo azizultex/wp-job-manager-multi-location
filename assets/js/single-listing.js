@@ -6,7 +6,7 @@
 		function MultiLocationMap() {
 
 			// Get vars needed.
-			this.options = mapSettings;
+			this.options = listifySingleMap;
 			this.additionallocations = additionallocations;
 			this.canvas  = 'multi-location-listing-contact-map';
 			this.allLatLng = [[mapSettings.lat, mapSettings.lng]]; // collect the default map lat lng to include with additionallocations

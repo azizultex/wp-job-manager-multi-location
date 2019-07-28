@@ -1,7 +1,7 @@
 <?php 
 /**
- * Plugin Name: Multi Location for WP Job Manager
- * Plugin URI:  https://plugins.keendevs.com/wp-job-manager-multi-location
+ * Plugin Name: Listify Multi Location for WP Job Manager
+ * Plugin URI:  https://plugins.keendevs.com/listify-wp-job-manager-multi-location
  * Description: Enable adding multiple locations for a single listing for admin. This plugin also shows in the multiple locations on the frontend search and single listing page location map. This plugin require https://astoundify.com/products/wp-job-manager-extended-location/
  * Author:      Azizul Haque
  * Author URI:  https://keendevs.com
@@ -64,6 +64,8 @@ class Keendevs_Multi_Location_WP_JOB_M {
         add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ), 99);
         /* frontend job edit, submit page */
         add_action( 'submit_job_form_end', array( $this, 'front_end_job_edit_submit' ) );
+        /* frontend preview listing */ 
+        add_action( 'preview_job_form_end', array( $this, 'preview_page_marker_listings' ) );
 
         /* load text domain */
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
@@ -113,7 +115,17 @@ class Keendevs_Multi_Location_WP_JOB_M {
         );
 
         $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
-        $listingEditPage = get_post_meta($_GET['job_id'], '_additionallocations', true);
+        $listingEditPage = []; // for frontend edit, preview, and drafting edit page
+        $listing_id = "";
+        var_dump($_POST);
+        if( isset($_GET['job_id']) || isset($_POST['job_id']) ){
+            $listing_id = isset($_GET['job_id']) ? $_GET['job_id'] : $_POST['job_id'];
+        } else if( isset($_POST['step']) && ( intval($_POST['step']) === 0 ) ){
+            $listing_id = $_COOKIE['wp-job-manager-submitting-job-id'];
+        }
+        
+        $listingEditPage = get_post_meta($listing_id, '_additionallocations', true);
+
         $options = array(
             'lat'         => $listing->get_lat(),
             'lng'         => $listing->get_lng()
@@ -164,10 +176,16 @@ class Keendevs_Multi_Location_WP_JOB_M {
         }
     }
 
+    public function preview_page_marker_listings(){
+        wp_enqueue_script( 'preview-listing', $this->plugin_url . 'assets/js/single-listing.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
+        wp_localize_script( 'preview-listing', 'mapSettings', $this->local['mapSettings'] );
+        wp_localize_script( 'preview-listing', 'additionallocations', $_POST['additionallocation']);
+    }
+
     public function front_end_job_edit_submit(){
         wp_enqueue_script( 'frontend-script', $this->plugin_url . 'assets/js/frontend-script.js', array( 'jquery', 'mapify' ), $this->version, true );
         wp_localize_script( 'frontend-script', 'additionallocations', $this->local['listingEditPage'] );
-		wp_localize_script( 'frontend-script', 'latlng', $this->local['options'] );
+        wp_localize_script( 'frontend-script', 'latlng', $this->local['options'] );
     }
 
     function save_post_location($post_id, $values) {
@@ -190,8 +208,6 @@ class Keendevs_Multi_Location_WP_JOB_M {
     }
 
     public function load_textdomain() {
-        // $locale = apply_filters( 'plugin_locale', get_locale(), 'wp-job-manager-locations' );
-        // load_textdomain( 'wp-job-manager-locations', WP_LANG_DIR . "/wp-job-manager-locations/wp-job-manager-locations-$locale.mo" );
         load_plugin_textdomain( $this->domain, false, dirname( $this->basename ) . '/languages/' );
     }
 }
