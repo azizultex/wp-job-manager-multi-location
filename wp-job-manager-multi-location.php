@@ -117,13 +117,11 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
         $listingEditPage = []; // for frontend edit, preview, and drafting edit page
         $listing_id = "";
-        var_dump($_POST);
         if( isset($_GET['job_id']) || isset($_POST['job_id']) ){
             $listing_id = isset($_GET['job_id']) ? $_GET['job_id'] : $_POST['job_id'];
         } else if( isset($_POST['step']) && ( intval($_POST['step']) === 0 ) ){
             $listing_id = $_COOKIE['wp-job-manager-submitting-job-id'];
         }
-        
         $listingEditPage = get_post_meta($listing_id, '_additionallocations', true);
 
         $options = array(
@@ -154,6 +152,10 @@ class Keendevs_Multi_Location_WP_JOB_M {
                 }
             }
         }
+        // load script for explore page work
+        if(listify_results_has_map()){
+            wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util'), $this->version, true );
+        }
         wp_localize_script('multi-location-explore', 'expPgAddiLoc', $extraMarkers);
         return $post_ids;
     }
@@ -165,9 +167,6 @@ class Keendevs_Multi_Location_WP_JOB_M {
             wp_enqueue_script( 'single-listing', $this->plugin_url . 'assets/js/single-listing.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
             wp_localize_script( 'single-listing', 'mapSettings', $this->local['mapSettings'] );
             wp_localize_script( 'single-listing', 'additionallocations', $this->local['additionallocations'] );
-        }
-        if(listify_results_has_map()){
-            wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util', 'listify-results'), $this->version, true );
         }
         if(is_admin()){
             wp_enqueue_script( 'admin-script', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
