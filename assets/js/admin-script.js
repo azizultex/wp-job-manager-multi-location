@@ -22,8 +22,6 @@ jQuery(function($){
 		wpjmel_mb.input = '#job_location' + i;
 		wpjmel_mb.lat_input = 'additionallocation['+i+'][lat]';
 		wpjmel_mb.lng_input = 'additionallocation['+i+'][lng]';
-		wpjmel_mb.lat = latlng.lat;
-		wpjmel_mb.lng = latlng.lng;
 		$( '#job_location' + i ).mapify(wpjmel_mb);
 		i++;
 	});

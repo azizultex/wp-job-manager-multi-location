@@ -19,6 +19,7 @@
 				this.allLatLng.push([location.lat, location.lng]);
 			}, this);
 
+			console.log(this.allLatLng)
 
 			// Setup map based on selected map provider.
 			if ( 'googlemaps' === this.options.provider ) {

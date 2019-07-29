@@ -10,7 +10,6 @@
  * Domain Path: /languages
  */
 
-
  // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -97,43 +96,42 @@ class Keendevs_Multi_Location_WP_JOB_M {
         // localize script data
         global $post;
         $listing = listify_get_listing( $post->ID );
-        $mapSettings = apply_filters(
-            'listify_single_map_settings',
-            array(
-                'provider'   => 'googlemaps' === get_theme_mod( 'map-service-provider', 'googlemaps' ) ? 'googlemaps' : 'mapbox',
-                'lat'        => $listing->get_lat(),
-                'lng'        => $listing->get_lng(),
-                'term'       => $listing->get_marker_term()->term_id,
-                'icon'       => $listing->get_marker_term_icon(),
-                'mapOptions' => array(
-                    'zoom'          => apply_filters( 'listify_single_listing_map_zoom', 15 ),
-                    'styles'        => get_theme_mod( 'map-appearance-scheme', 'blue-water' ),
-                    'mapboxTileUrl' => get_theme_mod( 'mapbox-tile-url', '' ),
-                    'maxZoom'       => get_theme_mod( 'map-behavior-max-zoom', 17 ),
-                ),
-            )
+        $listMapData = array(
+            'provider'   => 'googlemaps' === get_theme_mod( 'map-service-provider', 'googlemaps' ) ? 'googlemaps' : 'mapbox',
+            'term'       => $listing->get_marker_term()->term_id,
+            'icon'       => $listing->get_marker_term_icon(),
+            'mapOptions' => array(
+                'zoom'          => apply_filters( 'listify_single_listing_map_zoom', 15 ),
+                'styles'        => get_theme_mod( 'map-appearance-scheme', 'blue-water' ),
+                'mapboxTileUrl' => get_theme_mod( 'mapbox-tile-url', '' ),
+                'maxZoom'       => get_theme_mod( 'map-behavior-max-zoom', 17 ),
+            ),
+        );
+        $latLng = array(
+            'lat'   =>  $listing->get_lat(),
+            'lng'   =>  $listing->get_lng(),
+        );
+        $defaultLatLng = array(
+            'lat'         => esc_attr( get_option( 'wpjmel_start_geo_lat', 40.712784 ) ),
+            'lng'         => esc_attr( get_option( 'wpjmel_start_geo_long', -74.005941 ) )
         );
 
         $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
-        $listingEditPage = []; // for frontend edit, preview, and drafting edit page
+        $listingEditPreviewPage = []; // for frontend edit, preview, and drafting edit page
         $listing_id = "";
         if( isset($_GET['job_id']) || isset($_POST['job_id']) ){
             $listing_id = isset($_GET['job_id']) ? $_GET['job_id'] : $_POST['job_id'];
         } else if( isset($_POST['step']) && ( intval($_POST['step']) === 0 ) ){
             $listing_id = $_COOKIE['wp-job-manager-submitting-job-id'];
         }
-        $listingEditPage = get_post_meta($listing_id, '_additionallocations', true);
+        $listingEditPreviewPage = get_post_meta($listing_id, '_additionallocations', true);
 
-        $options = array(
-            'lat'         => $listing->get_lat(),
-            'lng'         => $listing->get_lng()
-        );
         $this->local = array(
-            'listing' => $listing,
-            'mapSettings' => $mapSettings,
+            'latLng' => $latLng,
+            'defaultLatLng'   => $defaultLatLng,
             'additionallocations' => $additionallocations,
-            'listingEditPage'   => $listingEditPage,
-            'options'   => $options,
+            'listingEditPreviewPage'   => $listingEditPreviewPage,
+            'listMapData'   => $listMapData,
         );
     }
 
@@ -153,7 +151,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
             }
         }
         // load script for explore page work
-        if(listify_results_has_map()){
+        if(listify_results_has_map() ){
             wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util'), $this->version, true );
         }
         wp_localize_script('multi-location-explore', 'expPgAddiLoc', $extraMarkers);
@@ -165,26 +163,24 @@ class Keendevs_Multi_Location_WP_JOB_M {
         wp_enqueue_style( 'multi-location-css', $this->plugin_url . 'assets/css/multilocation.css');
         if(is_singular('job_listing')){
             wp_enqueue_script( 'single-listing', $this->plugin_url . 'assets/js/single-listing.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
-            wp_localize_script( 'single-listing', 'mapSettings', $this->local['mapSettings'] );
+            wp_localize_script( 'single-listing', 'mapSettings', array_merge($this->local['latLng'], $this->local['listMapData']));
             wp_localize_script( 'single-listing', 'additionallocations', $this->local['additionallocations'] );
         }
-        if(is_admin()){
+        if(is_admin() && ( isset($_GET['post']) && 'job_listing' === get_post_type($_GET['post']))){
             wp_enqueue_script( 'admin-script', $this->plugin_url . 'assets/js/admin-script.js', array( 'jquery', 'mapify' ), $this->version, true );
             wp_localize_script( 'admin-script', 'additionallocations', $this->local['additionallocations'] );
-            wp_localize_script( 'admin-script', 'latlng', $this->local['options'] );
         }
     }
 
     public function preview_page_marker_listings(){
         wp_enqueue_script( 'preview-listing', $this->plugin_url . 'assets/js/single-listing.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
-        wp_localize_script( 'preview-listing', 'mapSettings', $this->local['mapSettings'] );
+        wp_localize_script( 'preview-listing', 'mapSettings', array_merge($this->local['defaultLatLng'], $this->local['listMapData']) );
         wp_localize_script( 'preview-listing', 'additionallocations', $_POST['additionallocation']);
     }
 
     public function front_end_job_edit_submit(){
         wp_enqueue_script( 'frontend-script', $this->plugin_url . 'assets/js/frontend-script.js', array( 'jquery', 'mapify' ), $this->version, true );
-        wp_localize_script( 'frontend-script', 'additionallocations', $this->local['listingEditPage'] );
-        wp_localize_script( 'frontend-script', 'latlng', $this->local['options'] );
+        wp_localize_script( 'frontend-script', 'additionallocations', $this->local['listingEditPreviewPage'] );
     }
 
     function save_post_location($post_id, $values) {
@@ -202,7 +198,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
         /* deregister existing map widget */ 
         unregister_widget( 'Listify_Widget_Listing_Map' );
         /* create custom multi location widget */
-        include_once  $this->plugin_dir . 'widgets/map-widget.php';
+        include_once  $this->plugin_dir . 'widgets/class-multi-location-listify-widget-listing-map.php';
         register_widget( 'Multi_Location_Listify_Widget_Listing_Map' );
     }
 
@@ -213,11 +209,35 @@ class Keendevs_Multi_Location_WP_JOB_M {
 
 
 /**
+ * Checks if the required plugins are activated
+ *
+ * @since 1.0
+ */
+function wp_job_manager_multi_location_required_plugins_check() {
+    if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+      include_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+    }
+    if ( current_user_can( 'activate_plugins' )) {
+
+      if( !class_exists( 'WP_Job_Manager' )):
+        // Deactivate the plugin.
+        deactivate_plugins( plugin_basename( __FILE__ ) );
+
+        // Throw an error in the WordPress admin console.
+        $error_message = '<p style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Oxygen-Sans,Ubuntu,Cantarell,\'Helvetica Neue\',sans-serif;font-size: 13px;line-height: 1.5;color:#444;">' . esc_html__( 'This plugin requires ', 'multi-location' ) . '<a href="#"></a>' . esc_html__( ' plugin to be active.', 'multi-location' ) . '</p>';
+        die( $error_message ); // WPCS: XSS ok.
+
+        endif;
+    }
+  }
+  
+// register_activation_hook( __FILE__, 'wp_job_manager_multi_location_required_plugins_check' );
+
+/**
  * Start things up.
  *
  * Use this function instead of a global.
  *
- * $ajmr = ajmr();
  *
  * @since 1.0
  */

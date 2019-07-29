@@ -95,11 +95,13 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 				endif;
 
 				$locations = get_post_meta(get_the_ID(), '_additionallocations', true);
-				foreach($locations as $l){
-					$addr = WP_Job_Manager_Geocode::get_location_data($l['address']);
-					printf('<p class="multi-location">%s</p>', $addr['formatted_address']);
-					$this->multiLocation_get_direction($addr['lat'],$addr['long']);
-				} 
+				if(is_array($locations) && !empty($locations)){
+					foreach($locations as $l){
+						$addr = WP_Job_Manager_Geocode::get_location_data($l['address']);
+						printf('<p class="multi-location">%s</p>', $addr['formatted_address']);
+						$this->multiLocation_get_direction($addr['lat'],$addr['long']);
+					}
+				}
 				?>
 			</div>
 			<?php endif; ?>
