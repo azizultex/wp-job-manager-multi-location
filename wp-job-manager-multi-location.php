@@ -203,17 +203,23 @@ class Keendevs_Multi_Location_WP_JOB_M {
  * @since 1.0
  */
 function wp_job_manager_multi_location() {
+
+    // check if listify theme is active 
+    if( strpos(wp_get_theme()->name, 'Listify') === false ){
+        deactivate_plugins( plugin_basename( __FILE__ ) );
+        return;
+    }
+    
     // deactivate the plugin if dependency plugins not active
-    // $required = array('Listify_Widget_Listing_Map', 'WP_Job_Manager', 'WP_Job_Manager_Extended_Location');
-    // foreach($required as $class){
-    //     if(!class_exists($class)){
-    //         var_dump('class_not_found');
-    //         var_dump($class);
-    //         // Deactivate the plugin.
-    //         // deactivate_plugins( plugin_basename( __FILE__ ) );
-    //         // return;
-    //     }
-    // }
+    $required = array('WP_Job_Manager', 'WP_Job_Manager_Extended_Location');
+    foreach($required as $class){
+        if(!class_exists($class)){
+            // Deactivate the plugin.
+            deactivate_plugins( plugin_basename( __FILE__ ) );
+            return;
+        }
+    }
     return Keendevs_Multi_Location_WP_JOB_M::instance();
 }
+
 add_action( 'plugins_loaded', 'wp_job_manager_multi_location', 99 );
