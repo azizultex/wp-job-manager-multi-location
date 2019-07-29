@@ -8,6 +8,8 @@
  * Version:     1.0
  * Text Domain: multi-location
  * Domain Path: /languages
+ * License: GPLv2 or later
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
  // Exit if accessed directly
@@ -209,9 +211,9 @@ function wp_job_manager_multi_location() {
         deactivate_plugins( plugin_basename( __FILE__ ) );
         return;
     }
-    
+
     // deactivate the plugin if dependency plugins not active
-    $required = array('WP_Job_Manager', 'WP_Job_Manager_Extended_Location');
+    $required = array('WP_Job_Manager', 'WP_Job_Manager_Extended_Location', 'FacetWP');
     foreach($required as $class){
         if(!class_exists($class)){
             // Deactivate the plugin.
