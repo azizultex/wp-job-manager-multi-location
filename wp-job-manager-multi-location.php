@@ -54,10 +54,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
     * @return void
     */
    private function setup_actions() {
-        if( !class_exists( 'WP_Job_Manager_Extended_Location' ) ){
-            add_action( 'admin_notices', array( $this, 'wp_job_manager_extended_location_missing' ));
-            return;
-        }
+
         /* Register Scripts */
         add_action( 'wp_enqueue_scripts', array( $this, 'register_scripts' ), 99);
         add_action( 'admin_enqueue_scripts', array( $this, 'register_scripts' ), 99);
@@ -86,16 +83,18 @@ class Keendevs_Multi_Location_WP_JOB_M {
         add_filter( 'facetwp_filtered_post_ids', array($this, 'localize_explore_page_results_ids'), 10, 2);
     }
 
-    public function wp_job_manager_extended_location_missing(){
-        $class = 'notice notice-error';
-        $message = __( 'Extended Location for WP Job Manager is required to activate this plugin plugin.', $this->domain );
-        printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html__( $message ) ); 
-    }
-
     public function localize_scripts_data(){
         // localize script data
         global $post;
-        $listing = listify_get_listing( $post->ID );
+        $listing_id = '';
+        if(isset($_POST['additionallocation'])){
+            $extraMarkers = $_POST['additionallocation'];
+        } elseif( isset($_GET['job_id']) || ( isset($_POST['job_id']) && 0 !== $_POST['job_id'] )){
+            $listing_id = isset($_GET['job_id']) ? $_GET['job_id'] : $_POST['job_id'];
+        } else {
+            $listing_id = $post->ID;
+        }
+        $listing = listify_get_listing( $listing_id );
         $listMapData = array(
             'provider'   => 'googlemaps' === get_theme_mod( 'map-service-provider', 'googlemaps' ) ? 'googlemaps' : 'mapbox',
             'term'       => $listing->get_marker_term()->term_id,
@@ -115,22 +114,14 @@ class Keendevs_Multi_Location_WP_JOB_M {
             'lat'         => esc_attr( get_option( 'wpjmel_start_geo_lat', 40.712784 ) ),
             'lng'         => esc_attr( get_option( 'wpjmel_start_geo_long', -74.005941 ) )
         );
-
-        $additionallocations = get_post_meta($post->ID, '_additionallocations', true);
-        $listingEditPreviewPage = []; // for frontend edit, preview, and drafting edit page
-        $listing_id = "";
-        if( isset($_GET['job_id']) || isset($_POST['job_id']) ){
-            $listing_id = isset($_GET['job_id']) ? $_GET['job_id'] : $_POST['job_id'];
-        } else if( isset($_POST['step']) && ( intval($_POST['step']) === 0 ) ){
-            $listing_id = $_COOKIE['wp-job-manager-submitting-job-id'];
+        if( $listing_id ){
+            $extraMarkers = get_post_meta($listing_id, '_additionallocations', true);
         }
-        $listingEditPreviewPage = get_post_meta($listing_id, '_additionallocations', true);
-
         $this->local = array(
             'latLng' => $latLng,
             'defaultLatLng'   => $defaultLatLng,
-            'additionallocations' => $additionallocations,
-            'listingEditPreviewPage'   => $listingEditPreviewPage,
+            'additionallocations' => $extraMarkers,
+            'listingEditPreviewPage'   => $extraMarkers,
             'listMapData'   => $listMapData,
         );
     }
@@ -185,12 +176,9 @@ class Keendevs_Multi_Location_WP_JOB_M {
 
     function save_post_location($post_id, $values) {
         $post_type = get_post_type( $post_id );
-        // WP_Job_Manager_Geocode::get_location_data();
-        /* Job Listing Location */
+        /* save / update the locations */
         if( 'job_listing' == $post_type && isset ( $_POST[ 'additionallocation' ] ) ){
             update_post_meta( $post_id, '_additionallocations', $_POST[ 'additionallocation' ]);
-        } else {
-            update_post_meta( $post_id, '_additionallocations', []);
         }
     }
 
@@ -207,41 +195,25 @@ class Keendevs_Multi_Location_WP_JOB_M {
     }
 }
 
-
-/**
- * Checks if the required plugins are activated
- *
- * @since 1.0
- */
-function wp_job_manager_multi_location_required_plugins_check() {
-    if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
-      include_once( ABSPATH . '/wp-admin/includes/plugin.php' );
-    }
-    if ( current_user_can( 'activate_plugins' )) {
-
-      if( !class_exists( 'WP_Job_Manager' )):
-        // Deactivate the plugin.
-        deactivate_plugins( plugin_basename( __FILE__ ) );
-
-        // Throw an error in the WordPress admin console.
-        $error_message = '<p style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Oxygen-Sans,Ubuntu,Cantarell,\'Helvetica Neue\',sans-serif;font-size: 13px;line-height: 1.5;color:#444;">' . esc_html__( 'This plugin requires ', 'multi-location' ) . '<a href="#"></a>' . esc_html__( ' plugin to be active.', 'multi-location' ) . '</p>';
-        die( $error_message ); // WPCS: XSS ok.
-
-        endif;
-    }
-  }
-  
-// register_activation_hook( __FILE__, 'wp_job_manager_multi_location_required_plugins_check' );
-
 /**
  * Start things up.
  *
  * Use this function instead of a global.
  *
- *
  * @since 1.0
  */
 function wp_job_manager_multi_location() {
+    // deactivate the plugin if dependency plugins not active
+    // $required = array('Listify_Widget_Listing_Map', 'WP_Job_Manager', 'WP_Job_Manager_Extended_Location');
+    // foreach($required as $class){
+    //     if(!class_exists($class)){
+    //         var_dump('class_not_found');
+    //         var_dump($class);
+    //         // Deactivate the plugin.
+    //         // deactivate_plugins( plugin_basename( __FILE__ ) );
+    //         // return;
+    //     }
+    // }
     return Keendevs_Multi_Location_WP_JOB_M::instance();
 }
-add_action( 'plugins_loaded', 'wp_job_manager_multi_location' );
+add_action( 'plugins_loaded', 'wp_job_manager_multi_location', 99 );

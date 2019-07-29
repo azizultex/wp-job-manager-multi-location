@@ -7,7 +7,7 @@
 
 			// Get vars needed.
 			this.options = mapSettings;
-			this.additionallocations = additionallocations;
+			this.additionallocations = additionallocations || [];
 			this.canvas  = 'multi-location-listing-contact-map';
 			this.allLatLng = [[mapSettings.lat, mapSettings.lng]]; // collect the default map lat lng to include with additionallocations
 
@@ -16,7 +16,9 @@
 			}
 			
 			this.additionallocations.forEach(function(location){
-				this.allLatLng.push([location.lat, location.lng]);
+				if( location.lat && location.lng ){
+					this.allLatLng.push([location.lat, location.lng]);
+				}
 			}, this);
 
 			console.log(this.allLatLng)

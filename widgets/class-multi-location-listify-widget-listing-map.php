@@ -32,7 +32,6 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 			<a <?php echo $attr_str; // WPCS: XSS ok. ?>><?php esc_html_e( 'Get Directions', 'listify' ); ?></a>
 		</div>
 		<?php
-		// printf('<div class="job_listing-directions"><a%s>%s</a></div>', $attr_str, esc_html_e( 'Get Directions', 'listify' ));
 	}
 
     function widget( $args, $instance ) {
