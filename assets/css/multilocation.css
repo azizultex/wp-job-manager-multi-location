@@ -21,3 +21,6 @@
     margin-top: 0;
     margin-bottom: 1em;
 }
+.geo-tag input {
+    width: 100%;
+}

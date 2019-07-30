@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Listify Multi Location for WP Job Manager
  * Plugin URI:  https://plugins.keendevs.com/listify-wp-job-manager-multi-location
- * Description: Enable adding multiple locations for a single listing for admin. This plugin also shows in the multiple locations on the frontend search and single listing page location map. This plugin require https://astoundify.com/products/wp-job-manager-extended-location/
+ * Description: Enable adding multiple locations for a single listing for admin. This plugin also shows in the multiple locations on the frontend search and single listing page location map.
  * Author:      Azizul Haque
  * Author URI:  https://keendevs.com
  * Version:     1.0
@@ -81,7 +81,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
         // multi-location widgets
         add_action( 'widgets_init', array( $this, 'widgets_init' ), 20);
 
-        // explore page facets locations ids 
+        // explore page facets locations ids
         add_filter( 'facetwp_filtered_post_ids', array($this, 'localize_explore_page_results_ids'), 10, 2);
     }
 
@@ -89,9 +89,9 @@ class Keendevs_Multi_Location_WP_JOB_M {
         // localize script data
         global $post;
         $listing_id = null;
-        var_dump($_REQUEST['additionallocation']);
+        $extraMarkers = array();
         if(isset($_REQUEST['additionallocation']) && is_array($_REQUEST['additionallocation'])){
-            $extraMarkers = array_map( array($this, 'secure_location_data'), $_REQUEST['additionallocation']);
+            $extraMarkers = array_filter( $_REQUEST['additionallocation'], array($this, 'secure_location_data'));
         } elseif( isset($_REQUEST['job_id']) && ( 0 !== intval($_REQUEST['job_id'] ))){
             $listing_id = isset($_REQUEST['job_id']) ? intval($_REQUEST['job_id']) : null;
         } else {
@@ -118,7 +118,10 @@ class Keendevs_Multi_Location_WP_JOB_M {
             'lng'         => esc_attr( get_option( 'wpjmel_start_geo_long', -74.005941 ) )
         );
         if( $listing_id ){
-            $extraMarkers = get_post_meta($listing_id, '_additionallocations', true);
+            $locations = get_post_meta($listing_id, '_additionallocations', true);
+            if(is_array($locations)){
+                $extraMarkers = array_filter( $locations, array($this, 'secure_location_data'));
+            }
         }
         $this->local = array(
             'latLng' => $latLng,
@@ -130,17 +133,21 @@ class Keendevs_Multi_Location_WP_JOB_M {
 
     public function secure_location_data($location){
         $allowedKeys = ['address', 'lat', 'lng'];
-        if(is_array($location)){
-            foreach($location as $k => $v){
-                if(in_array($k, $allowedKeys, true)){
-                    if('address' === $k){
-                        $location[$k] = sanitize_text_field($v);
-                    } else {
-                        $location[$k] = floatval(filter_var($v, FILTER_SANITIZE_NUMBER_FLOAT ));
-                    }
+        if(!is_array($location)){
+            return false;
+        }
+        foreach($location as $k => $v){
+            if(in_array($k, $allowedKeys, true)){
+                if('address' === $k){
+                    $location[$k] = sanitize_text_field($v);
+                } else {
+                    $location[$k] = floatval(filter_var($v, FILTER_SANITIZE_NUMBER_FLOAT ));
                 }
+            } else {
+                return;
             }
         }
+        return $location;
     }
 
     public function localize_explore_page_results_ids( $post_ids, $class ) {
@@ -159,9 +166,7 @@ class Keendevs_Multi_Location_WP_JOB_M {
             }
         }
         // load script for explore page work
-        if(listify_results_has_map() ){
-            wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util'), $this->version, true );
-        }
+        wp_enqueue_script( 'multi-location-explore', $this->plugin_url . 'assets/js/multilocation-explore.js', array('jquery', 'listify', 'wp-util', 'listify-map'), $this->version, true );
         wp_localize_script('multi-location-explore', 'expPgAddiLoc', $extraMarkers);
         return $post_ids;
     }
@@ -195,7 +200,9 @@ class Keendevs_Multi_Location_WP_JOB_M {
         $post_type = get_post_type( $post_id );
         /* save / update the locations */
         if( 'job_listing' == $post_type && isset ( $_POST['additionallocation'] ) && is_array($_POST['additionallocation']) ){
-            update_post_meta( $post_id, '_additionallocations', $_POST['additionallocation']);
+            // sanitize the data before saving
+            $extraMarkers = array_filter( $_POST['additionallocation'], array($this, 'secure_location_data'));
+            update_post_meta( $post_id, '_additionallocations', $extraMarkers );
         }
     }
 
