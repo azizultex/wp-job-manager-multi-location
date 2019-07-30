@@ -88,11 +88,12 @@ class Keendevs_Multi_Location_WP_JOB_M {
     public function localize_scripts_data(){
         // localize script data
         global $post;
-        $listing_id = '';
-        if(isset($_POST['additionallocation'])){
-            $extraMarkers = $_POST['additionallocation'];
-        } elseif( isset($_GET['job_id']) || ( isset($_POST['job_id']) && 0 !== $_POST['job_id'] )){
-            $listing_id = isset($_GET['job_id']) ? $_GET['job_id'] : $_POST['job_id'];
+        $listing_id = null;
+        var_dump($_REQUEST['additionallocation']);
+        if(isset($_REQUEST['additionallocation']) && is_array($_REQUEST['additionallocation'])){
+            $extraMarkers = array_map( array($this, 'secure_location_data'), $_REQUEST['additionallocation']);
+        } elseif( isset($_REQUEST['job_id']) && ( 0 !== intval($_REQUEST['job_id'] ))){
+            $listing_id = isset($_REQUEST['job_id']) ? intval($_REQUEST['job_id']) : null;
         } else {
             $listing_id = $post->ID;
         }
@@ -123,9 +124,23 @@ class Keendevs_Multi_Location_WP_JOB_M {
             'latLng' => $latLng,
             'defaultLatLng'   => $defaultLatLng,
             'additionallocations' => $extraMarkers,
-            'listingEditPreviewPage'   => $extraMarkers,
             'listMapData'   => $listMapData,
         );
+    }
+
+    public function secure_location_data($location){
+        $allowedKeys = ['address', 'lat', 'lng'];
+        if(is_array($location)){
+            foreach($location as $k => $v){
+                if(in_array($k, $allowedKeys, true)){
+                    if('address' === $k){
+                        $location[$k] = sanitize_text_field($v);
+                    } else {
+                        $location[$k] = floatval(filter_var($v, FILTER_SANITIZE_NUMBER_FLOAT ));
+                    }
+                }
+            }
+        }
     }
 
     public function localize_explore_page_results_ids( $post_ids, $class ) {
@@ -168,19 +183,19 @@ class Keendevs_Multi_Location_WP_JOB_M {
     public function preview_page_marker_listings(){
         wp_enqueue_script( 'preview-listing', $this->plugin_url . 'assets/js/single-listing.js', array('jquery', 'listify', 'wp-util', 'listify-map', 'mapify'), $this->version, true );
         wp_localize_script( 'preview-listing', 'mapSettings', array_merge($this->local['defaultLatLng'], $this->local['listMapData']) );
-        wp_localize_script( 'preview-listing', 'additionallocations', $_POST['additionallocation']);
+        wp_localize_script( 'preview-listing', 'additionallocations', $this->local['additionallocations']);
     }
 
     public function front_end_job_edit_submit(){
         wp_enqueue_script( 'frontend-script', $this->plugin_url . 'assets/js/frontend-script.js', array( 'jquery', 'mapify' ), $this->version, true );
-        wp_localize_script( 'frontend-script', 'additionallocations', $this->local['listingEditPreviewPage'] );
+        wp_localize_script( 'frontend-script', 'additionallocations', $this->local['additionallocations'] );
     }
 
     function save_post_location($post_id, $values) {
         $post_type = get_post_type( $post_id );
         /* save / update the locations */
-        if( 'job_listing' == $post_type && isset ( $_POST[ 'additionallocation' ] ) ){
-            update_post_meta( $post_id, '_additionallocations', $_POST[ 'additionallocation' ]);
+        if( 'job_listing' == $post_type && isset ( $_POST['additionallocation'] ) && is_array($_POST['additionallocation']) ){
+            update_post_meta( $post_id, '_additionallocations', $_POST['additionallocation']);
         }
     }
 

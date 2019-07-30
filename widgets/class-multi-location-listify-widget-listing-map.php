@@ -87,8 +87,9 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 			</div>
 			<div class="map-widget-section">
 				<h4><?php esc_html_e('Locations', 'multi-location'); ?></h4>
-				<?php 
-				printf('<p class="multi-location">%s</p>', get_post_meta(get_the_ID(), 'geolocation_formatted_address', true));
+				<?php
+				$defaultLocation = get_post_meta(get_the_ID(), 'geolocation_formatted_address', true);
+				printf('<p class="multi-location">%s</p>', sanitize_text_field($defaultLocation));
 				if ( $directions ) :
 					listify_the_listing_directions_form();
 				endif;
@@ -97,7 +98,7 @@ class Multi_Location_Listify_Widget_Listing_Map extends Listify_Widget_Listing_M
 				if(is_array($locations) && !empty($locations)){
 					foreach($locations as $l){
 						$addr = WP_Job_Manager_Geocode::get_location_data($l['address']);
-						printf('<p class="multi-location">%s</p>', $addr['formatted_address']);
+						printf('<p class="multi-location">%s</p>', sanitize_text_field($addr['formatted_address']));
 						$this->multiLocation_get_direction($addr['lat'],$addr['long']);
 					}
 				}
